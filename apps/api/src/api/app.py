@@ -39,7 +39,7 @@ def run_llm(provider, model_name, messages, max_tokens=500):
     else:
         return client.models.generate_content(
             model=model_name, 
-            contents=[messages["content"] for messages in messages],
+            contents=[message["content"] for message in messages],
         ).text
     
 

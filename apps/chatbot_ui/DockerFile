@@ -2,26 +2,27 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
-# Enable bytecode compilation and python optimizations 
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_PYTHON_OPTIMIZE=1
-ENV UV_LINK_MODE=copy
-
-# set pyton path to include the app directory
-ENV PYTHONPATH="/app/src:$PYTHONPATH"
-
 # Copy only dependency files first for better caching
 COPY pyproject.toml uv.lock ./
 
+# Copy the rest of the application code
+COPY apps/chatbot_ui ./apps/chatbot_ui
+
+# Enable bytecode compilation 
+ENV UV_COMPILE_BYTECODE=1
+
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --frozen
+    uv sync --no-dev --frozen --package chatbot_ui
 
-# Copy the rest of the application code
-COPY src ./src/
+# Enable bytecode compilation and python optimizations 
+ENV PYTHONOPTIMIZE=1
+ENV PYTHONBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Set path to use the virtual environment's python
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/apps/chatbot_ui/src:$PYTHONPATH"
 
 # Create a non-root user and set permissions
 RUN addgroup --system app && \
@@ -43,5 +44,7 @@ USER app
 # Expose the port that Streamlit will run on
 EXPOSE 8501
 
+WORKDIR /app/apps/chatbot_ui/src
+
 # Set the entrypoint to run the Streamlit app
-CMD ["uv", "run", "streamlit", "run", "src/app.py", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "chatbot_ui/app.py", "--server.address=0.0.0.0"]

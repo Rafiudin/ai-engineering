@@ -217,5 +217,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Data folder
+# Ignore folder
 /data/
+/qdrant_storage/

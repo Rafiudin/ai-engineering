@@ -15,7 +15,7 @@ A sample end-to-end project demonstrating a lightweight AI application with a Fa
 - Docker & Docker Compose (for containerized run)
 
 Quick dependencies (see `pyproject.toml` for full list):
-- `fastapi`, `uvicorn`, `streamlit`, `openai`, `google-genai`, `groq`, `pydantic`, `python-dotenv`
+- `fastapi`, `uvicorn`, `streamlit`, `requests`, `openai`, `google-genai`, `groq`, `qdrant`, `pydantic`, `python-dotenv`
 
 Getting started
 ---------------
@@ -48,8 +48,13 @@ Alternate local development (without Docker)
 
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate   # Windows: .venv\Scripts\activate
-pip install -e .[dev]
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+# Windows CMD
+.\.venv\Scripts\activate.bat
+# macOS / Linux
+source .venv/bin/activate
+pip install -e .
 ```
 
 - Run the API (from `apps/api`):
@@ -69,12 +74,15 @@ Project architecture
 
 - Backend (`apps/api`)
 	- Exposes POST `/chat` which accepts JSON payload { `provider`, `model_name`, `messages` } and returns `{ "response": "..." }`.
-	- Main LLM integration implemented in `apps/api/src/api/app.py` using provider-specific SDKs (OpenAI, Groq, Google GenAI).
-	- Configuration loads API keys from `.env` via `pydantic-settings` (`apps/api/src/api/core/config.py`).
+	- Supports OpenAI, Groq, and Google GenAI providers via `openai`, `groq`, and `google-genai` SDKs.
+	- Includes optional Qdrant support for vector retrieval or embedding storage when configured.
+	- Uses provider-specific request formatting and max token control in `apps/api/src/api/app.py`.
+	- Loads API keys from `.env` with `pydantic-settings` (`apps/api/src/api/core/config.py`).
 
 - Frontend (`apps/chatbot_ui`)
-	- Streamlit app at `apps/chatbot_ui/src/chatbot_ui/app.py` with a simple chat UI.
-	- Calls backend `/chat` endpoint using the configured `API_URL` from `apps/chatbot_ui/src/chatbot_ui/core/config.py`.
+	- Streamlit app at `apps/chatbot_ui/src/chatbot_ui/app.py` with provider/model selection and chat-style UI.
+	- Includes basic API error handling, server connection checks, and response rendering.
+	- Sends requests to backend `/chat` using `requests` and configured `API_URL` from `apps/chatbot_ui/src/chatbot_ui/core/config.py`.
 
 API usage example
 ------------------
@@ -105,6 +113,7 @@ curl -X POST http://localhost:8000/chat \
 Notes & configuration
 ---------------------
 - Environment: `env.example` includes `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `GROQ_API_KEY`.
+- Frontend API URL: default is `http://api:8000` inside Docker, configurable with `.env` in `apps/chatbot_ui/src/chatbot_ui/core/config.py`.
 - Ports: Streamlit uses `8501`, API uses `8000` (as defined in `docker-compose.yml`).
 - Python constraints: Project root `pyproject.toml` requests `requires-python = ">=3.12"`.
 
